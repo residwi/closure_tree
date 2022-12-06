@@ -4,10 +4,13 @@ module ClosureTree
         # Deepest generation, within limit, for each descendant
         # NOTE: Postgres requires HAVING clauses to always contains aggregate functions (!!)
         having_clause = limit_depth ? "HAVING MAX(generations) <= #{limit_depth - 1}" : ''
+        filter = scope.select(model_class.primary_key).to_sql
+        where_clause = scope.where_clause.any? ? "WHERE descendant_id IN (#{filter})" : ''
         generation_depth = <<-SQL.squish
           INNER JOIN (
             SELECT descendant_id, MAX(generations) as depth
             FROM #{quoted_hierarchy_table_name}
+            #{where_clause}
             GROUP BY descendant_id
             #{having_clause}
           ) #{ t_alias_keyword } generation_depth

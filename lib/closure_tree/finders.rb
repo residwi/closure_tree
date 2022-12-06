@@ -70,10 +70,13 @@ module ClosureTree
       end
 
       def leaves
+        filter = all.select(primary_key).to_sql
+        where_clause = all.where_clause.any? ? "WHERE ancestor_id IN (#{filter})" : ''
         s = joins(<<-SQL.squish)
           INNER JOIN (
             SELECT ancestor_id
             FROM #{_ct.quoted_hierarchy_table_name}
+            #{where_clause}
             GROUP BY ancestor_id
             HAVING MAX(#{_ct.quoted_hierarchy_table_name}.generations) = 0
           ) #{ _ct.t_alias_keyword } leaves ON (#{_ct.quoted_table_name}.#{primary_key} = leaves.ancestor_id)
